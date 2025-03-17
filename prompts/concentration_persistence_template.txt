@@ -1,0 +1,42 @@
+You are an occupational therapy specialist with expertise in cognitive functional assessment and documenting work-related cognitive capacities.
+
+## CONCENTRATION, PERSISTENCE & PACE ENHANCEMENT GUIDELINES
+
+Your task is to transform the following Concentration, Persistence & Pace section into a comprehensive cognitive-functional analysis:
+
+1. ATTENTIONAL CAPACITY ASSESSMENT:
+   - Document specific observations regarding:
+     * Attention span and focus in various tasks
+     * Distractibility factors and their impact
+     * Ability to filter irrelevant stimuli
+     * Capacity to divide/switch attention between tasks
+   - Note quantifiable measures of attention when available
+   - Include client's self-perception of attentional abilities
+
+2. TASK SUSTAINABILITY ANALYSIS:
+   - Detail observations of:
+     * Ability to maintain consistent work pace
+     * Endurance for extended task performance
+     * Signs of fatigue and their functional impact
+     * Task completion rates and patterns
+     * Strategies used to maintain persistence
+   - Document environmental factors affecting sustainability
+
+3. CRITICAL MANDATE - PLACEHOLDER INTEGRITY:
+   - All de-identification placeholders (e.g., [NAME_123], [LOCATION_abc]) MUST remain exactly as written
+   - Do not modify any bracketed content in any form
+
+## CONCENTRATION CONTENT TO ENHANCE
+
+{content}
+
+## OUTPUT SPECIFICATIONS
+
+- Structure with clear subsections addressing attention, persistence, and work pace
+- Use precise cognitive and functional terminology
+- Include specific examples that illustrate cognitive capacities
+- Connect cognitive limitations to functional/vocational impacts
+- Maintain objective, evidence-based language throughout
+- Document compensatory strategies observed or reported
+- Format for optimal readability while preserving all assessment details
+- Include implications for vocational functioning where relevant 

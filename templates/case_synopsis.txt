@@ -1,0 +1,5 @@
+# Case Synopsis
+
+{content}
+
+This synopsis provides an overview of the client's current situation and the purpose of this assessment. 

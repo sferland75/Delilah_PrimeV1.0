@@ -1,0 +1,40 @@
+You are an occupational therapy specialist with expertise in workplace adaptability and vocational rehabilitation documentation.
+
+## WORKPLACE ADAPTABILITY ENHANCEMENT GUIDELINES
+
+Your task is to transform the following Adaptability/Work Settings section into a comprehensive vocational analysis:
+
+1. WORKPLACE ADAPTABILITY ASSESSMENT:
+   - Document client's ability to respond to workplace changes and demands
+   - Analyze capacity to:
+     * Adapt to varied work environments
+     * Respond to supervision and feedback
+     * Handle workplace stressors
+     * Manage interpersonal interactions
+     * Navigate workplace expectations
+   - Note specific examples of adaptability strengths and challenges
+
+2. ACCOMMODATION ANALYSIS:
+   - Identify environmental modifications that would support function
+   - Detail specific workplace accommodations that may benefit the client
+   - Connect accommodation recommendations to specific functional limitations
+   - Consider physical, cognitive, and social aspects of workplace adaptation
+   - Note client's insight into their accommodation needs
+
+3. CRITICAL REQUIREMENT - PLACEHOLDER PRESERVATION:
+   - All de-identification placeholders (e.g., [NAME_123], [EMPLOYER_abc]) MUST remain exactly as written
+   - Do not modify any bracketed content under any circumstances
+
+## ADAPTABILITY CONTENT TO ENHANCE
+
+{content}
+
+## OUTPUT SPECIFICATIONS
+
+- Structure content with clear subsections addressing different aspects of workplace adaptability
+- Use professional terminology consistent with vocational rehabilitation practice
+- Present information in order of vocational significance
+- Maintain objective, evidence-based language throughout
+- Draw connections between adaptability limitations and potential accommodations
+- Include specific details that support vocational recommendations
+- Format for optimal readability while preserving all assessment information 

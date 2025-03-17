@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delilah Prime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 2rem;
+        }
+        .file-list {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+        .api-status {
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .api-available {
+            color: #198754;
+            background-color: #d1e7dd;
+        }
+        .api-unavailable {
+            color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .workflow-steps {
+            margin-bottom: 1.5rem;
+        }
+        .workflow-step {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            border-left: 3px solid #ced4da;
+        }
+        .workflow-step.active {
+            background-color: #e2f0fd;
+            border-left: 3px solid #0d6efd;
+            font-weight: 500;
+        }
+        .workflow-step.completed {
+            background-color: #d1e7dd;
+            border-left: 3px solid #198754;
+        }
+        .console-log {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            background-color: #f8f9fa;
+            border-radius: 0.25rem;
+            padding: 0;
+            height: 500px;
+            overflow-y: auto;
+        }
+        .console-log div {
+            padding: 4px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .console-log .text-api {
+            color: #0d6efd;
+        }
+        .sticky-sidebar {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1>Delilah Prime</h1>
+                    <p class="lead">Secure Clinical Report Generation System</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="api-status {% if api_available %}api-available{% else %}api-unavailable{% endif %}">
+                        <strong>Claude API:</strong> {% if api_available %}Available{% else %}Not Available{% endif %}
+                    </div>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('template_manager') }}" class="btn btn-sm btn-outline-secondary">Templates</a>
+                        {% if admin_mode %}
+                            <a href="{{ url_for('prompt_lab') }}" class="btn btn-sm btn-outline-secondary">Prompt Lab</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    <ul class="mb-0">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Workflow</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="workflow-steps">
+                                    <div class="workflow-step {% if input_files %}completed{% else %}active{% endif %}">
+                                        <strong>Step 1:</strong> Upload source documents (assessment notes, records review)
+                                    </div>
+                                    <div class="workflow-step {% if input_files and not draft_exists %}active{% elif draft_exists %}completed{% endif %}">
+                                        <strong>Step 2:</strong> Process files to generate draft report
+                                    </div>
+                                    <div class="workflow-step {% if draft_exists %}active{% endif %}">
+                                        <strong>Step 3:</strong> Preview and refine report sections
+                                    </div>
+                                    <div class="workflow-step">
+                                        <strong>Step 4:</strong> Finalize report and export to Word
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    {% if draft_exists %}
+                                        <a href="{{ url_for('preview_report') }}" class="btn btn-primary">Continue to Report Preview</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Input Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                                    <div class="mb-3">
+                                        <label for="file" class="form-label">Upload File</label>
+                                        <input type="file" class="form-control" id="file" name="file">
+                                        <div class="form-text">Supported formats: .txt, .md, .docx, .pdf</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Upload</button>
+                                </form>
+                                
+                                <div class="file-list">
+                                    {% if input_files %}
+                                        <ul class="list-group">
+                                            {% for file in input_files %}
+                                                <li class="list-group-item">{{ file }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted text-center mt-3">No input files</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a href="{{ url_for('clear_input') }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to clear all input files?')">Clear Input Files</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Process</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Process all input files to generate a clinical report.</p>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="offlineMode" {% if offline_mode %}checked{% endif %} onchange="window.location.href='{{ url_for('toggle_offline_mode') }}'">
+                                        <label class="form-check-label" for="offlineMode">
+                                            Offline Mode (Skip Claude API)
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        {% if offline_mode %}
+                                            Currently in offline mode: Report will be generated without AI enhancement.
+                                        {% else %}
+                                            Currently using Claude API: Report will be enhanced with AI assistance.
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if custom_prompts %}
+                                <div class="mb-3">
+                                    <label for="promptSelect" class="form-label">Select Prompt Template (Optional)</label>
+                                    <select class="form-select" id="promptSelect">
+                                        <option value="">Default prompt</option>
+                                        {% for prompt in custom_prompts %}
+                                            <option value="{{ prompt }}">{{ prompt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Choose a prompt template for Claude API
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if custom_templates %}
+                                <div class="mb-3">
+                                    <label for="templateSelect" class="form-label">Select Report Template (Optional)</label>
+                                    <select class="form-select" id="templateSelect">
+                                        <option value="">Default template</option>
+                                        {% for template in custom_templates %}
+                                            <option value="{{ template }}">{{ template }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">
+                                        Choose a document template for the final report
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('process_files') }}" id="generateReportBtn" class="btn btn-success">Generate Report</a>
+                                    {% if has_ref_table %}
+                                        <a href="{{ url_for('view_reference_table') }}" class="btn btn-info">View Reference Table</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Output Files</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="file-list">
+                                    {% if output_files %}
+                                        <ul class="list-group">
+                                            {% for file in output_files %}
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    {{ file }}
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{{ url_for('view_file', filename=file) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                                        <a href="{{ url_for('download_file', filename=file) }}" class="btn btn-sm btn-outline-secondary">Download</a>
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted text-center mt-3">No output files</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a href="{{ url_for('clear_output') }}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to clear all output files?')">Clear Output Files</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card sticky-sidebar mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Activity Console</h5>
+                        <button id="clearConsole" class="btn btn-sm btn-outline-secondary">Clear</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="activityConsole" class="console-log">
+                            <div class="text-muted">--- System initialized ---</div>
+                            <div class="text-muted">Waiting for activity...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">System Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Claude API
+                                <span class="badge {% if api_available %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                    {% if api_available %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Mode
+                                <span class="badge {% if offline_mode %}bg-warning{% else %}bg-primary{% endif %} rounded-pill">
+                                    {% if offline_mode %}Offline{% else %}Online{% endif %}
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Input Files
+                                <span class="badge bg-secondary rounded-pill">{{ input_files|length }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Output Files
+                                <span class="badge bg-secondary rounded-pill">{{ output_files|length }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Help</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Activity Console</strong> shows real-time logs of system operations, API interactions, and processing events.</p>
+                        <p>Monitor report generation progress and API responses in the console above.</p>
+                        <p><small class="text-muted">Note: Claude API calls may take 15-30 seconds depending on network conditions and model availability.</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 pt-3 text-muted text-center border-top">
+            <p>Delilah Prime v1.0 &copy; 2023</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get references to elements
+            const consoleElement = document.getElementById('activityConsole');
+            const clearButton = document.getElementById('clearConsole');
+            
+            // Clear console when button is clicked
+            clearButton.addEventListener('click', function() {
+                consoleElement.innerHTML = '<div class="text-muted">Console cleared</div>';
+            });
+
+            // Function to add a message to the console
+            function addConsoleMessage(message, type = 'info') {
+                const messageElement = document.createElement('div');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                // Set classes based on message type
+                if (type === 'error') {
+                    messageElement.className = 'text-danger';
+                } else if (type === 'success') {
+                    messageElement.className = 'text-success';
+                } else if (type === 'warning') {
+                    messageElement.className = 'text-warning';
+                } else if (type === 'api') {
+                    messageElement.className = 'text-api';
+                } else {
+                    messageElement.className = 'text-muted';
+                }
+                
+                messageElement.textContent = `[${timestamp}] ${message}`;
+                consoleElement.appendChild(messageElement);
+                
+                // Auto-scroll to bottom
+                consoleElement.scrollTop = consoleElement.scrollHeight;
+            }
+
+            // Add initial messages
+            addConsoleMessage("System ready. Delilah Prime v1.0 initialized.", "success");
+            {% if api_available %}
+                addConsoleMessage("Claude API connection available.", "api");
+            {% else %}
+                addConsoleMessage("Claude API not available. Running in offline mode.", "warning");
+            {% endif %}
+
+            // Try to set up event source for server-sent events
+            try {
+                const evtSource = new EventSource("/event_stream");
+                
+                evtSource.onmessage = function(event) {
+                    try {
+                        const eventData = JSON.parse(event.data);
+                        addConsoleMessage(eventData.message, eventData.type);
+                    } catch (e) {
+                        addConsoleMessage(event.data);
+                    }
+                };
+                
+                evtSource.onerror = function(err) {
+                    addConsoleMessage("Connection to event stream lost. Will try to reconnect...", "warning");
+                    console.error("EventSource failed:", err);
+                };
+
+                // Add event listeners for the form submissions
+                const uploadForm = document.getElementById('uploadForm');
+                if (uploadForm) {
+                    uploadForm.addEventListener('submit', function() {
+                        addConsoleMessage("Uploading file(s)...");
+                    });
+                }
+
+                const processButton = document.getElementById('generateReportBtn');
+                if (processButton) {
+                    processButton.addEventListener('click', function() {
+                        addConsoleMessage("Starting report generation process...");
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to initialize EventSource:", err);
+                addConsoleMessage("Failed to connect to activity stream. Console will not update automatically.", "error");
+            }
+
+            // Handle the template selection
+            const templateSelect = document.getElementById('templateSelect');
+            if (templateSelect) {
+                templateSelect.addEventListener('change', function() {
+                    const template = this.value;
+                    const generateButton = document.getElementById('generateReportBtn');
+                    
+                    if (generateButton) {
+                        // Get the current href
+                        let url = new URL(generateButton.href);
+                        
+                        // Remove any existing template parameter
+                        url.searchParams.delete('template');
+                        
+                        // Add the new template parameter if one is selected
+                        if (template) {
+                            url.searchParams.set('template', template);
+                        }
+                        
+                        // Update the button href
+                        generateButton.href = url.toString();
+                    }
+                });
+            }
+
+            // Handle prompt selection
+            const promptSelect = document.getElementById('promptSelect');
+            if (promptSelect) {
+                promptSelect.addEventListener('change', function() {
+                    const prompt = this.value;
+                    const generateButton = document.getElementById('generateReportBtn');
+                    
+                    if (generateButton) {
+                        // Get the current href
+                        let url = new URL(generateButton.href);
+                        
+                        // Remove any existing prompt parameter
+                        url.searchParams.delete('prompt');
+                        
+                        // Add the new prompt parameter if one is selected
+                        if (prompt) {
+                            url.searchParams.set('prompt', prompt);
+                        }
+                        
+                        // Update the button href
+                        generateButton.href = url.toString();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

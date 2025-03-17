@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Preview - Delilah Prime</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            margin-bottom: 2rem;
+        }
+        .nav-pills .nav-link {
+            padding: 0.5rem 1rem;
+        }
+        .tab-content {
+            padding-top: 1rem;
+        }
+        .section-edit-form {
+            display: none;
+        }
+        .section-container {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 0.25rem;
+        }
+        .section-actions {
+            margin-top: 0.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1>Delilah Prime</h1>
+                    <p class="lead">Report Preview & Refinement</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-primary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    <ul class="mb-0">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-pills card-header-pills" id="reportTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview" type="button" role="tab" aria-controls="preview" aria-selected="true">Report Preview</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sections-tab" data-bs-toggle="tab" data-bs-target="#sections" type="button" role="tab" aria-controls="sections" aria-selected="false">Edit by Section</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button" role="tab" aria-controls="manual" aria-selected="false">Manual Edit</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="reportTabsContent">
+                            <!-- Preview Tab -->
+                            <div class="tab-pane fade show active" id="preview" role="tabpanel" aria-labelledby="preview-tab">
+                                <div class="d-flex justify-content-end mb-3">
+                                    <a href="{{ url_for('finalize_report') }}" class="btn btn-success" onclick="return confirm('Are you sure you want to finalize this report? This will reidentify all placeholders and generate the final document.')">Finalize Report</a>
+                                </div>
+                                <pre>{{ content }}</pre>
+                            </div>
+                            
+                            <!-- Sections Tab -->
+                            <div class="tab-pane fade" id="sections" role="tabpanel" aria-labelledby="sections-tab">
+                                <p class="text-muted mb-4">Select a section to refine. Use Claude AI to enhance the content while preserving all factual information.</p>
+                                
+                                {% for section_name in report_sections %}
+                                    {% if section_name in sections %}
+                                        <div class="section-container">
+                                            <h5>{{ section_name.replace('_', ' ').title() }}</h5>
+                                            <pre id="section-content-{{ section_name }}">{{ sections[section_name] }}</pre>
+                                            
+                                            <div class="section-actions">
+                                                <button class="btn btn-outline-primary btn-sm" onclick="showSectionEdit('{{ section_name }}')">Edit Section</button>
+                                            </div>
+                                            
+                                            <div class="section-edit-form" id="section-edit-{{ section_name }}">
+                                                <form action="{{ url_for('refine_section') }}" method="post" class="mt-3">
+                                                    <input type="hidden" name="section" value="{{ section_name }}">
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="content-{{ section_name }}" class="form-label">Section Content</label>
+                                                        <textarea class="form-control" id="content-{{ section_name }}" name="content" rows="8">{{ sections[section_name] }}</textarea>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <label for="custom-prompt-{{ section_name }}" class="form-label">Custom Prompt (Optional)</label>
+                                                        <textarea class="form-control" id="custom-prompt-{{ section_name }}" name="custom_prompt" rows="4" placeholder="Enter a custom prompt to guide Claude's enhancement of this section. Use {section} for section name and {content} for the content."></textarea>
+                                                        <div class="form-text">Leave blank to use the default prompt.</div>
+                                                        <button type="button" class="btn btn-link btn-sm mt-1" data-bs-toggle="collapse" data-bs-target="#prompt-tips-{{ section_name }}">Show prompt writing tips</button>
+                                                        <div class="collapse mt-2" id="prompt-tips-{{ section_name }}">
+                                                            <div class="card card-body bg-light">
+                                                                <p class="small mb-1"><strong>Effective Prompt Structure:</strong></p>
+                                                                <ol class="small mb-2">
+                                                                    <li>Start with expertise definition (e.g., "You are an expert OT specializing in {section} documentation")</li>
+                                                                    <li>Provide specific enhancement instructions (terminology, structure, tone)</li>
+                                                                    <li>Emphasize placeholder preservation (CRITICAL)</li>
+                                                                    <li>Include the content using the {content} placeholder</li>
+                                                                    <li>Define output format requirements</li>
+                                                                </ol>
+                                                                <p class="small mb-1"><strong>Focus for {{ section_name|replace('_', ' ')|title }}:</strong></p>
+                                                                <p class="small mb-0">
+                                                                {% if section_name == 'case_synopsis' %}
+                                                                    Concise overview, clear reason for referral, clinical context
+                                                                {% elif section_name == 'background_information' %}
+                                                                    Chronological organization, key functional impacts, relevant history
+                                                                {% elif section_name == 'assessment_methodology' %}
+                                                                    Standardized measures, evaluation methods, assessment environment
+                                                                {% elif section_name == 'functional_observations' %}
+                                                                    Categorized findings, functional impacts, objective observations
+                                                                {% elif section_name == 'activities_of_daily_living' %}
+                                                                    Structure by activity types, limitations, adaptations
+                                                                {% elif section_name == 'social_functioning' %}
+                                                                    Interpersonal abilities, community integration, support systems
+                                                                {% elif section_name == 'concentration_persistence_pace' %}
+                                                                    Attention, task sustainability, work rhythm, specific examples
+                                                                {% elif section_name == 'adaptability_work_settings' %}
+                                                                    Environmental adaptation, workplace demands, accommodations
+                                                                {% elif section_name == 'summary_recommendations' %}
+                                                                    Key findings, prioritized recommendations, evidence-based rationale
+                                                                {% else %}
+                                                                    Professional clinical language, logical organization, factual accuracy
+                                                                {% endif %}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <button type="button" class="btn btn-outline-secondary" onclick="hideSectionEdit('{{ section_name }}')">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary">Refine with Claude</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Manual Edit Tab -->
+                            <div class="tab-pane fade" id="manual" role="tabpanel" aria-labelledby="manual-tab">
+                                <form action="{{ url_for('manual_edit') }}" method="post">
+                                    <div class="mb-3">
+                                        <label for="content" class="form-label">Report Content</label>
+                                        <textarea class="form-control" id="content" name="content" rows="20">{{ content }}</textarea>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('process_files') }}" class="btn btn-primary" onclick="return confirm('This will reprocess all input files. Any manual edits will be lost. Continue?')">Regenerate Draft</a>
+                    <a href="{{ url_for('finalize_report') }}" class="btn btn-success" onclick="return confirm('Are you sure you want to finalize this report? This will reidentify all placeholders and generate the final document.')">Finalize Report</a>
+                    <a href="{{ url_for('view_reference_table') }}" class="btn btn-info">View Reference Table</a>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-5 pt-3 text-muted text-center border-top">
+            <p>Delilah Prime v1.0 &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showSectionEdit(sectionName) {
+            document.getElementById(`section-content-${sectionName}`).style.display = 'none';
+            document.getElementById(`section-edit-${sectionName}`).style.display = 'block';
+        }
+        
+        function hideSectionEdit(sectionName) {
+            document.getElementById(`section-content-${sectionName}`).style.display = 'block';
+            document.getElementById(`section-edit-${sectionName}`).style.display = 'none';
+        }
+    </script>
+</body>
+</html> 

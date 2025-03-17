@@ -1,0 +1,58 @@
+{
+    "app": {
+        "name": "Delilah Prime",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "input_directory": "input",
+        "output_directory": "output",
+        "templates_directory": "templates",
+        "reference_tables": ".delilah/reference_tables"
+    },
+    "deidentification": {
+        "phi_types": [
+            "PERSON",
+            "DATE",
+            "ADDRESS",
+            "PHONE",
+            "EMAIL",
+            "ID_NUMBER",
+            "MEDICAL_RECORD"
+        ],
+        "excluded_terms": []
+    },
+    "api": {
+        "endpoint": "https://api.anthropic.com/v1/messages",
+        "model": "claude-3-opus-20240229",
+        "max_tokens": 4000
+    },
+    "document_types": {
+        "assessment_notes": {
+            "priority": 1,
+            "required": true
+        },
+        "file_review": {
+            "priority": 2,
+            "required": true
+        },
+        "medical_documents": {
+            "priority": 3,
+            "required": false
+        }
+    },
+    "report_sections": [
+        "case_synopsis",
+        "background_information",
+        "assessment_methodology",
+        "functional_observations",
+        "activities_of_daily_living",
+        "social_functioning",
+        "concentration_persistence_pace",
+        "adaptability_work_settings",
+        "summary_recommendations"
+    ],
+    "security": {
+        "encrypt_reference_tables": true,
+        "auto_delete_after_days": 30
+    }
+}
