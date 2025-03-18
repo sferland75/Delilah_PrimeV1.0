@@ -40,6 +40,61 @@
             "required": false
         }
     },
+    "section_keywords": {
+        "case_synopsis": [
+            "case synopsis", "case overview", "summary of case", "presenting issues",
+            "reason for referral", "overview of case", "brief overview", "situation summary"
+        ],
+        "background_information": [
+            "background", "history", "past history", "relevant history", "personal history",
+            "medical history", "social history", "previous assessments", "client history",
+            "past medical history", "historical information", "patient background"
+        ],
+        "assessment_methodology": [
+            "methodology", "assessment approach", "evaluation methods", "assessment tools",
+            "testing procedures", "evaluation methodology", "assessment protocol",
+            "procedures used", "assessment measures", "standardized tests",
+            "clinical observations", "test administration", "assessment process"
+        ],
+        "functional_observations": [
+            "observations", "functional observations", "clinical observations",
+            "behavioral observations", "observed behaviors", "functional performance",
+            "observed function", "observed abilities", "functional assessment",
+            "clinical findings", "observational data", "functional status"
+        ],
+        "activities_of_daily_living": [
+            "adl", "activities of daily living", "daily activities", "self-care",
+            "self care", "personal care", "daily function", "independent living skills",
+            "basic activities", "instrumental activities", "iadl", "daily routines",
+            "functional independence", "daily living skills", "self-maintenance"
+        ],
+        "social_functioning": [
+            "social functioning", "social skills", "interpersonal functioning",
+            "interpersonal relationships", "social interactions", "social behavior",
+            "social communication", "social participation", "community integration",
+            "social engagement", "relationships", "social involvement", "social network"
+        ],
+        "concentration_persistence_pace": [
+            "concentration", "attention", "persistence", "pace", "mental focus",
+            "sustained attention", "task completion", "work rate", "processing speed",
+            "attention span", "distractibility", "task persistence", "mental endurance",
+            "cognitive stamina", "work pace", "attention to task"
+        ],
+        "adaptability_work_settings": [
+            "adaptability", "work settings", "work environment", "adjustment",
+            "coping skills", "stress tolerance", "adaptation", "flexibility",
+            "response to pressure", "workplace adjustment", "environmental adaptation",
+            "occupational adaptation", "resilience", "emotional regulation",
+            "response to change", "vocational adaptation"
+        ],
+        "summary_recommendations": [
+            "summary", "recommendations", "conclusion", "treatment recommendations",
+            "suggested interventions", "proposed plan", "clinical recommendations",
+            "therapeutic goals", "intervention strategies", "treatment goals",
+            "clinical impressions", "concluding remarks", "rehabilitation goals",
+            "follow-up plan", "clinical summary", "prognosis", "treatment suggestions"
+        ]
+    },
     "report_sections": [
         "case_synopsis",
         "background_information",
