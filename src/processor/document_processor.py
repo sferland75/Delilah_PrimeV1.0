@@ -338,43 +338,44 @@ class DocumentProcessor:
         print("\n== STARTING DOCUMENT PROCESSING ==")
         print(f"Processing {len(files)} files")
         
-        # First, extract and organize content from all files
-        extracted_content = {}
-        for file_path in files:
-            file_content = self._extract_content_from_file(file_path)
-            self._organize_content_by_section(file_content, extracted_content)
+        # Use the organize_content method which already exists
+        organized_content = self.organize_content(files)
         
-        # Make a single copy of the extracted content
+        # Create a dictionary to store the final report content
         report_content = {}
-        processed_sections = set()  # Track which sections have been queued for processing
         
         # Process each section
-        for section_name, content in extracted_content.items():
-            # Skip if this section is empty or already processed
-            if not content or section_name in processed_sections:
+        for section_name, content in organized_content.items():
+            # Skip if this section is empty
+            if not content:
+                print(f"Skipping empty section: {section_name}")
                 continue
                 
-            processed_sections.add(section_name)
+            print(f"Processing section: {section_name}")
             
-            # Add to report content regardless (will be enhanced if API available)
+            # Add content to the report (will be enhanced if API available)
             report_content[section_name] = content
             
             # If the API is available, attempt enhancement
             if self.api_client.is_available():
-                # If this is a custom prompt generation:
-                if prompt_template:
-                    enhanced_content = self.api_client.generate_custom_narrative(
-                        section_name, content, prompt_template
-                    )
-                else:
-                    # Use the default prompt
-                    enhanced_content = self.api_client.generate_narrative(
-                        section_name, content
-                    )
-                
-                # Only update if we got content back
-                if enhanced_content and enhanced_content.strip():
-                    report_content[section_name] = enhanced_content
+                try:
+                    # If custom prompt is provided, use it
+                    if prompt_template:
+                        enhanced_content = self.api_client.generate_custom_narrative(
+                            section_name, content, prompt_template
+                        )
+                    else:
+                        # Use the default prompt
+                        enhanced_content = self.api_client.generate_narrative(
+                            section_name, content
+                        )
+                    
+                    # Only update if we got back valid content
+                    if enhanced_content and enhanced_content.strip():
+                        report_content[section_name] = enhanced_content
+                except Exception as e:
+                    print(f"Error enhancing section {section_name}: {str(e)}")
+                    # Keep the original content on error
                     
         print("== DOCUMENT PROCESSING COMPLETE ==")
         
@@ -385,7 +386,7 @@ class DocumentProcessor:
                     report_content[section], reference_table
                 )
                 
-        return report_content 
+        return report_content
 
     def _extract_content_from_file(self, file_path):
         """
