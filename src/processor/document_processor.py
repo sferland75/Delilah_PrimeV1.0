@@ -414,4 +414,36 @@ class DocumentProcessor:
         if content:
             return self.deidentifier.deidentify_text(content)
         
-        return "" 
+        return ""
+        
+    def _organize_content_by_section(self, content, organized_content=None):
+        """
+        Organize content into sections based on keywords.
+        
+        Args:
+            content: The document content to organize
+            organized_content: Dictionary to store organized content, if None a new one is created
+            
+        Returns:
+            Dictionary with content organized by section
+        """
+        if organized_content is None:
+            organized_content = {section: "" for section in self.section_keywords.keys()}
+            
+        # Skip if no content
+        if not content:
+            return organized_content
+            
+        # Process each section
+        for section_name, keywords in self.section_keywords.items():
+            # Extract content for this section based on keywords
+            section_content = self._extract_section(content, keywords)
+            
+            # If we found content, add it to the organized content
+            if section_content:
+                if organized_content[section_name]:
+                    organized_content[section_name] += f"\n\n{section_content}"
+                else:
+                    organized_content[section_name] = section_content
+                    
+        return organized_content 
