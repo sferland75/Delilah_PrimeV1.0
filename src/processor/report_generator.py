@@ -53,7 +53,7 @@ class ReportGenerator:
         """Format a section name into a readable title."""
         return section_name.replace('_', ' ').title()
     
-    def generate_report(self, content_sections, enhanced_sections=None, custom_header=None, custom_footer=None):
+    def generate_report(self, content_sections, enhanced_sections=None, custom_header=None, custom_footer=None, template=None):
         """
         Generate a complete report from content sections.
         
@@ -62,10 +62,31 @@ class ReportGenerator:
             enhanced_sections: Optional dictionary of AI-enhanced sections
             custom_header: Optional custom header text for the report
             custom_footer: Optional custom footer text for the report
+            template: Optional template for the entire report
             
         Returns:
             Complete report as string
         """
+        # Initialize enhanced_sections if None
+        if enhanced_sections is None:
+            enhanced_sections = {}
+            
+        # If we have a full report template, use it
+        if template:
+            # Replace section placeholders in the template
+            report_content = template
+            for section in self.report_sections:
+                placeholder = f"{{{section}}}"
+                
+                # Use enhanced content if available, otherwise use original
+                content = enhanced_sections.get(section, "") or content_sections.get(section, "")
+                
+                # Replace the placeholder with content
+                report_content = report_content.replace(placeholder, content or "")
+                
+            return report_content
+            
+        # Otherwise build the report section by section
         report = []
         
         # Add report header (custom or default)
@@ -77,24 +98,18 @@ class ReportGenerator:
         
         # Process each section in the defined order
         for section in self.report_sections:
+            # Get section content, preferring enhanced if available
+            content = enhanced_sections.get(section, "") or content_sections.get(section, "")
+            
             # Skip empty sections
-            if not content_sections.get(section) and not enhanced_sections.get(section):
+            if not content:
                 continue
             
             # Load section template
-            template = self._load_template(section)
-            
-            # Use enhanced content if available, otherwise use original
-            content = enhanced_sections.get(section, "") if enhanced_sections else ""
-            if not content:
-                content = content_sections.get(section, "")
-            
-            # Skip if still no content
-            if not content:
-                continue
+            section_template = self._load_template(section)
             
             # Format the section using the template
-            formatted_section = template.replace("{content}", content)
+            formatted_section = section_template.replace("{content}", content)
             
             # Add to report
             report.append(formatted_section)

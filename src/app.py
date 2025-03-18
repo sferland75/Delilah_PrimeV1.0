@@ -213,33 +213,64 @@ def process_files():
         log_event("Starting report section processing...")
         reference_table = deidentifier.get_reference_table()
         
-        # Process all sections at once to leverage our concurrency protection
-        enhanced_content = document_processor.process_documents(input_files, prompt_template, reference_table)
-        
-        # Generate the report
-        log_event("Generating final report...")
-        report_content = report_generator.generate_report(enhanced_content, template=report_template)
-        
-        # Save draft report
-        draft_path = os.path.join(OUTPUT_PATH, 'draft_report.txt')
-        with open(draft_path, 'w', encoding='utf-8') as f:
-            f.write(report_content)
+        try:
+            # Process all sections at once to leverage our concurrency protection
+            enhanced_content = document_processor.process_documents(input_files, prompt_template, reference_table)
             
-        log_event("Saved draft report")
-        
-        # Save reference table if available
-        ref_table_path = os.path.join(OUTPUT_PATH, 'reference_table.json')
-        if reference_table:
-            with open(ref_table_path, 'w', encoding='utf-8') as f:
-                json.dump(reference_table, f, indent=2)
-                log_event("Saved reference table")
-        
-        # Store report in session for refinement
-        session['report_content'] = enhanced_content
-        session['has_ref_table'] = os.path.exists(ref_table_path)
-        
-        flash('Report generated successfully')
-        log_event("Report generation complete - ready for review")
+            # Generate the report
+            log_event("Generating final report...")
+            report_content = report_generator.generate_report(enhanced_content, template=report_template)
+            
+            # Save draft report
+            draft_path = os.path.join(OUTPUT_PATH, 'draft_report.txt')
+            with open(draft_path, 'w', encoding='utf-8') as f:
+                f.write(report_content)
+                
+            log_event("Saved draft report")
+            
+            # Save reference table if available
+            ref_table_path = os.path.join(OUTPUT_PATH, 'reference_table.json')
+            if reference_table:
+                with open(ref_table_path, 'w', encoding='utf-8') as f:
+                    json.dump(reference_table, f, indent=2)
+                    log_event("Saved reference table")
+            
+            # Store report in session for refinement
+            session['report_content'] = enhanced_content
+            session['has_ref_table'] = os.path.exists(ref_table_path)
+            
+            flash('Report generated successfully')
+            log_event("Report generation complete - ready for review")
+        except Exception as e:
+            log_event(f"Error in report processing: {str(e)}")
+            # Fallback to organized content if processing fails
+            log_event("Using organized content as fallback...")
+            
+            # Save the organized content directly
+            with open(os.path.join(OUTPUT_PATH, 'enhanced_content.json'), 'w', encoding='utf-8') as f:
+                json.dump(organized_content, f, indent=2)
+                
+            # Generate a simple report from the organized content
+            simple_report = "# Generated Report\n\n"
+            for section_name, content in organized_content.items():
+                if content:
+                    formatted_section = section_name.replace('_', ' ').title()
+                    simple_report += f"## {formatted_section}\n\n{content}\n\n"
+            
+            # Save simple report
+            draft_path = os.path.join(OUTPUT_PATH, 'draft_report.txt')
+            with open(draft_path, 'w', encoding='utf-8') as f:
+                f.write(simple_report)
+                
+            log_event("Saved simple report as fallback")
+            
+            # Store report in session for refinement
+            session['report_content'] = organized_content
+            session['has_ref_table'] = False
+            
+            flash('Report generated with basic content (API enhancement failed)')
+            log_event("Basic report generation complete")
+            
         return redirect(url_for('index'))
     except Exception as e:
         error_msg = f"Error processing files: {str(e)}"
