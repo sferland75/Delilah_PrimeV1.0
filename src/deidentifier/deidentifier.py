@@ -193,6 +193,52 @@ class Deidentifier:
             return True
         except (FileNotFoundError, json.JSONDecodeError):
             return False
+            
+    def get_reference_table(self):
+        """
+        Get the current reference table.
+        
+        Returns:
+            Dictionary containing the reference table mappings
+        """
+        return self.reference_table
+        
+    def reidentify_content(self, content, reference_table=None):
+        """
+        Re-identify content by replacing placeholders with original values.
+        
+        Args:
+            content: The de-identified content to re-identify
+            reference_table: Optional external reference table to use
+            
+        Returns:
+            Re-identified content with original values
+        """
+        # Use provided reference table if available, otherwise use the internal one
+        ref_table = reference_table if reference_table else self.reference_table
+        
+        # If content is a string, reidentify directly
+        if isinstance(content, str):
+            reidentified = content
+            for placeholder, original in ref_table.items():
+                reidentified = reidentified.replace(placeholder, original)
+            return reidentified
+        
+        # If content is a dictionary (e.g., sections), reidentify each value
+        elif isinstance(content, dict):
+            reidentified = {}
+            for key, value in content.items():
+                if isinstance(value, str):
+                    reidentified_value = value
+                    for placeholder, original in ref_table.items():
+                        reidentified_value = reidentified_value.replace(placeholder, original)
+                    reidentified[key] = reidentified_value
+                else:
+                    reidentified[key] = value
+            return reidentified
+        
+        # Return original content if not a string or dictionary
+        return content
 
 
 # Example usage
